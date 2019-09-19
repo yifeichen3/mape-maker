@@ -281,14 +281,14 @@ def integrate_a_mean_2d(l_, x_,  a=0, b=0, verbose=False):
     beta_mare = np.mean(abs(test))
     return beta_mare
 
-
 def integrate_a_mean_1d(x, a=0, b=0, verbose=False):
     l_, x_ = x
     return -integrate_a_mean_2d(l_, x_, a=a, b=b, verbose=verbose)
 
-
-def find_intersections(x, target=0, a=0, b=0, verbose=False):
-    return [integrate_a_mean_2d(x[0], x[1], a=a, b=b, verbose=verbose) - target, 0]
+def find_intersections(x, target=0, a=0, b=0, hatl=0, hats=0, oscale=0,  verbose=False):
+    # the word "scale" is used in two different ways.
+    return [integrate_a_mean_2d(x[0], x[1], a=a, b=b, verbose=verbose) - target,
+            (hatl-x[0])/oscale, (hats-x[1])/oscale]
 
 
 def get_s_tilde_sid(s_x, m_tilde, m_hat, m_max, cap):
@@ -313,12 +313,13 @@ def get_s_tilde_sid(s_x, m_tilde, m_hat, m_max, cap):
         try:
             loc_nx = -x if loc_nx < -x else loc_nx
             scale_nx = cap - x if scale_nx > cap - x else scale_nx
+            oscale = max(abs(loc_nx), abs(scale_nx), m_tilde[x])
             # bounds are ([lower, lower], [upper,upper])
             # NOTE: the upper bound for s should be cap - x - l
             nl, ns = least_squares(find_intersections,
                                    x0=(min(loc_nx+5,-x/2), scale_nx),
                                    bounds=([-x, 0], [0, cap-x]),
-                                   args=(m_tilde[x], a, b, False),
+                                   args=(m_tilde[x], a, b, loc_nx, scale_nx, oscale, False),
                                    ftol=1e-3, method="dogbox").x
             if j % p == 0:
                 print("     - l_hat and s_hat = {}, {} for m_hat(x) = {} => l_tilde and s_tilde = {}, {} "
